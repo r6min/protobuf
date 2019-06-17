@@ -2824,8 +2824,16 @@ void Generator::GenerateClassField(const GeneratorOptions& options,
       // Otherwise, use the regular setField function.
       printer->Print(
           "$class$.prototype.$settername$ = function(value) {\n"
+          "  if(!(typeof(value) === '$type$' || value instanceof $typetag$)) throw 'Cannot set type. Expected type $typetag$ and got ' + typeof(value) + '.';\n"
           "  jspb.Message.set$oneoftag$Field(this, $index$",
           "class", GetMessagePath(options, field->containing_type()),
+          "type",
+          JSFieldTypeAnnotation(options, field,
+                              /* is_setter_argument = */ false,
+                              /* force_present = */ false,
+                              /* singular_if_not_packed = */ false),
+          "typetag",
+          JSTypeTag(field),
           "settername", "set" + JSGetterName(options, field), "oneoftag",
           (field->containing_oneof() ? "Oneof" : ""), "index",
           JSFieldIndex(field));
