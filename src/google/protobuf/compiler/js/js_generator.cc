@@ -2823,10 +2823,14 @@ void Generator::GenerateClassField(const GeneratorOptions& options,
     } else {
       // Otherwise, use the regular setField function.
       std::string jstype = JSTypeName(options, field, bytes_mode);
+      // for primitives, do a type check to avoid passing incorrect types
       if(IsPrimitive(jstype)) {
         printer->Print(
           "$class$.prototype.$settername$ = function(value) {\n"
-          "  if(!(typeof(value) === '$type$' || (typeof(value) === 'object' && typeof(value.valueOf()) === '$type$'))) throw 'Cannot set type. Expected type $type$ and got ' + typeof(value) + '.';\n"
+          "  if(!(typeof(value) === '$type$')) {\n"
+          "    if((typeof(value) === 'object' && typeof(value.valueOf()) === '$type$')) value = value.valueOf();\n" 
+          "    else throw 'Cannot set type. Expected type $type$ and got ' + typeof(value) + '.';\n"
+          "  }\n"
           "  jspb.Message.set$oneoftag$Field(this, $index$",
           "class", GetMessagePath(options, field->containing_type()),
           "type",
