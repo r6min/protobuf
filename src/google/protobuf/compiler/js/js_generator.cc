@@ -2822,21 +2822,28 @@ void Generator::GenerateClassField(const GeneratorOptions& options,
       printer->Annotate("settername", field);
     } else {
       // Otherwise, use the regular setField function.
-      printer->Print(
+      std::string jstype = JSTypeName(options, field, bytes_mode);
+      if(IsPrimitive(jstype)) {
+        printer->Print(
           "$class$.prototype.$settername$ = function(value) {\n"
-          "  if(!(typeof(value) === '$type$' || value instanceof $typetag$)) throw 'Cannot set type. Expected type $typetag$ and got ' + typeof(value) + '.';\n"
+          "  if(!(typeof(value) === '$type$' || (typeof(value) === 'object' && typeof(value.valueOf()) === '$type$'))) throw 'Cannot set type. Expected type $type$ and got ' + typeof(value) + '.';\n"
           "  jspb.Message.set$oneoftag$Field(this, $index$",
           "class", GetMessagePath(options, field->containing_type()),
           "type",
-          JSFieldTypeAnnotation(options, field,
-                              /* is_setter_argument = */ false,
-                              /* force_present = */ false,
-                              /* singular_if_not_packed = */ false),
-          "typetag",
-          JSTypeTag(field),
+          jstype,
           "settername", "set" + JSGetterName(options, field), "oneoftag",
           (field->containing_oneof() ? "Oneof" : ""), "index",
           JSFieldIndex(field));
+      } else {
+        printer->Print(
+          "$class$.prototype.$settername$ = function(value) {\n"
+          "  jspb.Message.set$oneoftag$Field(this, $index$",
+          "class", GetMessagePath(options, field->containing_type()),
+          "settername", "set" + JSGetterName(options, field), "oneoftag",
+          (field->containing_oneof() ? "Oneof" : ""), "index",
+          JSFieldIndex(field));
+      }
+
       printer->Annotate("settername", field);
       printer->Print(
           "$oneofgroup$, $type$value$rptvalueinit$$typeclose$);$returnvalue$\n"
